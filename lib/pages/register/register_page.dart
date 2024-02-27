@@ -1,6 +1,7 @@
 import 'package:ampushare/pages/login/login_page.dart';
 import 'package:ampushare/pages/register/register_continue_page.dart';
 import 'package:ampushare/widgets/cover_image/AmpuShareBackgroundCover.dart';
+import 'package:ampushare/widgets/or_line/OrLine.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
@@ -200,64 +201,7 @@ class RegisterPage extends HookWidget {
                       ),
 
                       // ---OR---
-                      SizedBox(
-                        width: 282,
-                        height: 22.11,
-                        child: Stack(
-                          children: [
-                            Positioned(
-                              left: 161,
-                              top: 11.58,
-                              child: Container(
-                                width: 121,
-                                decoration: const ShapeDecoration(
-                                  shape: RoundedRectangleBorder(
-                                    side: BorderSide(
-                                      width: 1,
-                                      strokeAlign: BorderSide.strokeAlignCenter,
-                                      color: Color(0xFF9B9B9B),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                            const Positioned(
-                              left: 133,
-                              top: 0,
-                              child: SizedBox(
-                                width: 15,
-                                height: 22.11,
-                                child: Text(
-                                  'or',
-                                  style: TextStyle(
-                                    color: Colors.black,
-                                    fontSize: 14,
-                                    fontFamily: 'Poppins',
-                                    fontWeight: FontWeight.w600,
-                                    height: 0,
-                                  ),
-                                ),
-                              ),
-                            ),
-                            Positioned(
-                              left: 0,
-                              top: 11.58,
-                              child: Container(
-                                width: 121,
-                                decoration: const ShapeDecoration(
-                                  shape: RoundedRectangleBorder(
-                                    side: BorderSide(
-                                      width: 1,
-                                      strokeAlign: BorderSide.strokeAlignCenter,
-                                      color: Color(0xFF9B9B9B),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      const OrLine(),
 
                       const SizedBox(
                         height: 10.5,
