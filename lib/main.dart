@@ -1,7 +1,9 @@
 import 'package:ampushare/pages/login/login_page.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
-void main() {
+Future main() async {
+  await dotenv.load(fileName: ".env");
   runApp(MaterialApp(
     title: "AmpuShare",
     debugShowCheckedModeBanner: false,
