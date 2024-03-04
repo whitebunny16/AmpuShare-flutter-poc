@@ -1,8 +1,13 @@
+import 'dart:developer';
+
 import 'package:ampushare/pages/forgot_password/forgot_password_page.dart';
+import 'package:ampushare/pages/home/homepage.dart';
 import 'package:ampushare/pages/register/register_page.dart';
+import 'package:ampushare/services/dio_helper.dart';
 import 'package:ampushare/widgets/cover_image/AmpuShareBackgroundCover.dart';
 import 'package:ampushare/widgets/or_line/OrLine.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
 class LoginPage extends HookWidget {
@@ -21,8 +26,25 @@ class LoginPage extends HookWidget {
     final _passwordController = useTextEditingController();
 
     void handleLogin() {
+      DioHelper.getDio().then((dio) async {
+        try {
+          final response = await dio.post(
+            '/api/user/login/',
+            data: {
+              "username": _usernameController.text,
+              "password": _passwordController.text,
+            },
+          );
 
-    };
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => const HomePage()));
+        } catch (e) {
+          print(e);
+        }
+      });
+    }
+
+    ;
 
     return Scaffold(
       body: SizedBox(
