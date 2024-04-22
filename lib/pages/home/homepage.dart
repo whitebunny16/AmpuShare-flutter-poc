@@ -5,6 +5,7 @@ import 'package:ampushare/data/models/auth_model/auth_model.dart';
 import 'package:ampushare/data/models/post/post_view_model.dart';
 import 'package:ampushare/pages/comment_page/comment_page.dart';
 import 'package:ampushare/pages/create_post_page/create_post_page.dart';
+import 'package:ampushare/pages/search_page/search_page.dart';
 import 'package:ampushare/services/dio_helper.dart';
 import 'package:ampushare/widgets/profile_drawer/profile_drawer.dart';
 import 'package:ampushare/widgets/video_player_widget/video_player_widget.dart';
@@ -62,6 +63,15 @@ class HomePage extends HookWidget {
     useEffect(() {
       getProfileImage();
     }, []);
+
+    void onProfileSearchPressed() {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const SearchPage(),
+        ),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -190,6 +200,20 @@ class HomePage extends HookWidget {
             tooltip: 'Book Appointment',
           ),
         ],
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              break;
+            case 1:
+              onProfileSearchPressed();
+              break;
+            case 2:
+              // Navigate to appointment page
+              break;
+            default:
+              break;
+          }
+        },
       ),
     );
   }
