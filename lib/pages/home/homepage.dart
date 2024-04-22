@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:ampushare/data/models/post/post_view_model.dart';
 import 'package:ampushare/pages/comment_page/comment_page.dart';
+import 'package:ampushare/pages/create_post_page/create_post_page.dart';
 import 'package:ampushare/services/dio_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -27,7 +28,8 @@ class HomePage extends HookWidget {
 
   @override
   Widget build(BuildContext context) {
-    final postsFuture = useMemoized(fetchPosts);
+    final refreshKey = useState(0);
+    final postsFuture = useMemoized(fetchPosts, [refreshKey.value]);
     final snapshot = useFuture(postsFuture);
 
     void onCommentButtonPress(int postId) {
@@ -39,68 +41,107 @@ class HomePage extends HookWidget {
       );
     }
 
+    Future<void> refreshPosts() async {
+      refreshKey.value++;
+    }
+
     return Scaffold(
       body: SafeArea(
-        child: snapshot.connectionState == ConnectionState.waiting
-            ? const CircularProgressIndicator()
-            : snapshot.hasError
-                ? Center(child: Text('${snapshot.error}'))
-                : ListView.builder(
-                    itemCount: snapshot.data?.length,
-                    itemBuilder: (context, index) {
-                      var post = snapshot.data?[index];
-                      return Card(
-                        child: Column(
-                          children: <Widget>[
-                            // Head
-                            ListTile(
-                              leading: CircleAvatar(
-                                backgroundImage: NetworkImage(
-                                    '${dotenv.get('API_HOST')}${post?.user.profilePic}' ??
-                                        ''),
+        child: RefreshIndicator(
+          onRefresh: refreshPosts,
+          child: snapshot.connectionState == ConnectionState.waiting
+              ? const CircularProgressIndicator()
+              : snapshot.hasError
+                  ? Center(child: Text('${snapshot.error}'))
+                  : ListView.builder(
+                      itemCount: snapshot.data?.length,
+                      itemBuilder: (context, index) {
+                        var post = snapshot.data?[index];
+                        return Card(
+                          child: Column(
+                            children: <Widget>[
+                              // Head
+                              ListTile(
+                                leading: CircleAvatar(
+                                  backgroundImage: NetworkImage(
+                                      '${dotenv.get('API_HOST')}${post?.user.profilePic}' ??
+                                          ''),
+                                ),
+                                title: Text(post?.user.username ?? ''),
+                                subtitle: Text(post?.caption ?? ''),
                               ),
-                              title: Text(post?.user.username ?? ''),
-                              subtitle: Text(post?.caption ?? ''),
-                            ),
-                            // Body
-                            if (post?.image != null)
-                              Image.network(post?.image ?? '')
-                            else if (post?.video != null)
-                              // Replace this with your video widget
-                              Container(child: Text('Video: ${post?.video}')),
-                            // Footer
-                            ButtonBar(
-                              alignment: MainAxisAlignment.start,
-                              children: <Widget>[
-                                Row(
-                                  children: <Widget>[
-                                    IconButton(
-                                      icon: Icon(Icons.thumb_up),
-                                      onPressed: () {
-                                        // Handle like button press
-                                      },
-                                    ),
-                                    Text(post?.likeCount.toString() ?? '0'),
-                                  ],
-                                ),
-                                Row(
-                                  children: <Widget>[
-                                    IconButton(
-                                      icon: Icon(Icons.comment),
-                                      onPressed: () {
-                                        onCommentButtonPress(post!.id);
-                                      },
-                                    ),
-                                    Text(post?.commentCount.toString() ?? '0'),
-                                  ],
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+                              // Body
+                              if (post?.image != null)
+                                Image.network('${dotenv.get('API_HOST')}${post?.image}' ?? '')
+                              else if (post?.video != null)
+                                // Replace this with your video widget
+                                Container(child: Text('Video: ${post?.video}')),
+                              // Footer
+                              ButtonBar(
+                                alignment: MainAxisAlignment.start,
+                                children: <Widget>[
+                                  Row(
+                                    children: <Widget>[
+                                      IconButton(
+                                        icon: Icon(Icons.thumb_up),
+                                        onPressed: () {
+                                          // Handle like button press
+                                        },
+                                      ),
+                                      Text(post?.likeCount.toString() ?? '0'),
+                                    ],
+                                  ),
+                                  Row(
+                                    children: <Widget>[
+                                      IconButton(
+                                        icon: Icon(Icons.comment),
+                                        onPressed: () {
+                                          onCommentButtonPress(post!.id);
+                                        },
+                                      ),
+                                      Text(
+                                          post?.commentCount.toString() ?? '0'),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        );
+                      },
+                    ),
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CreatePostPage(),
+            ),
+          );
+        },
+        tooltip: 'Add Post',
+        child: const Icon(Icons.add),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Home',
+            tooltip: 'Home',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.search),
+            label: 'Search',
+            tooltip: 'Find Users',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.calendar_today),
+            label: 'Appointment',
+            tooltip: 'Book Appointment',
+          ),
+        ],
       ),
     );
   }
