@@ -1,4 +1,6 @@
 import 'package:ampushare/data/models/auth_model/auth_model.dart';
+import 'package:ampushare/pages/buddy_view_page/buddy_view_page.dart';
+import 'package:ampushare/pages/own_profile_page/own_profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -29,11 +31,13 @@ class ProfileDrawer extends HookConsumerWidget {
     }, []);
 
     void onProfileIconPress() {
-      // Navigate to profile page
+      Navigator.of(context).push(
+          MaterialPageRoute(builder: (context) => const OwnProfilePage()));
     }
 
     void onBuddiesIconPress() {
-      // Navigate to buddies page
+      Navigator.of(context)
+          .push(MaterialPageRoute(builder: (context) => const BuddyViewPage()));
     }
 
     void onLogoutIconPress() {
