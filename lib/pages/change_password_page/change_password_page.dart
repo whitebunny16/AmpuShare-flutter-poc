@@ -1,42 +1,29 @@
-import 'package:ampushare/pages/change_password_page/change_password_page.dart';
 import 'package:ampushare/pages/login/login_page.dart';
 import 'package:ampushare/services/dio_helper.dart';
 import 'package:ampushare/widgets/layouts/auth_layout/auth_layout.dart';
+import 'package:ampushare/widgets/or_line/OrLine.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
-class ForgotPasswordPage extends HookWidget {
-  const ForgotPasswordPage({super.key});
+class ChangePasswordPage extends HookWidget {
+  final String email;
+
+  const ChangePasswordPage({super.key, required this.email});
 
   @override
   Widget build(BuildContext context) {
+    final newPasswordController = useTextEditingController();
+    final isPasswordVisible = useState<bool>(false);
+
     double screenWidth = MediaQuery.of(context).size.width;
     double screenHeight = MediaQuery.of(context).size.height;
 
-    final emailController = useTextEditingController();
-
-    void handleCheckEmail() async {
-      String email = emailController.text;
-      if (email.isEmpty) {
+    void changePassword() async {
+      String newPassword = newPasswordController.text;
+      if (newPassword.isEmpty || newPassword.length < 8) {
         Fluttertoast.showToast(
-            msg: "Email cannot be empty",
-            toastLength: Toast.LENGTH_SHORT,
-            gravity: ToastGravity.BOTTOM,
-            timeInSecForIosWeb: 1,
-            backgroundColor: Colors.red,
-            textColor: Colors.white,
-            fontSize: 16.0);
-        return;
-      }
-
-      // Validate email
-      String pattern =
-          r'^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$';
-      RegExp regex = RegExp(pattern);
-      if (!regex.hasMatch(email)) {
-        Fluttertoast.showToast(
-            msg: "Invalid email format",
+            msg: "Password must be at least 8 characters long",
             toastLength: Toast.LENGTH_SHORT,
             gravity: ToastGravity.BOTTOM,
             timeInSecForIosWeb: 1,
@@ -50,31 +37,30 @@ class ForgotPasswordPage extends HookWidget {
       DioHelper.getDioForAuth().then((dio) async {
         try {
           final response = await dio.post(
-            '/api/user/password/reset',
+            '/api/user/password/reset/confirm',
             data: {
               "email": email,
+              "new_password": newPassword,
             },
           );
 
           if (response.statusCode == 200) {
             Fluttertoast.showToast(
-                msg: "Email was found, you can now change your password",
+                msg: "Password changed successfully",
                 toastLength: Toast.LENGTH_SHORT,
                 gravity: ToastGravity.BOTTOM,
                 timeInSecForIosWeb: 1,
                 backgroundColor: Colors.green,
                 textColor: Colors.white,
                 fontSize: 16.0);
-
-            Navigator.push(
-              context,
+            Navigator.of(context).pushReplacement(
               MaterialPageRoute(
-                builder: (context) => ChangePasswordPage(email: email),
+                builder: (context) => const LoginPage(),
               ),
             );
           } else {
             Fluttertoast.showToast(
-                msg: "Error occurred while sending password reset link",
+                msg: "Error occurred while changing password",
                 toastLength: Toast.LENGTH_SHORT,
                 gravity: ToastGravity.BOTTOM,
                 timeInSecForIosWeb: 1,
@@ -84,7 +70,7 @@ class ForgotPasswordPage extends HookWidget {
           }
         } catch (e) {
           Fluttertoast.showToast(
-              msg: "email not found in the database",
+              msg: "Error occurred while changing password",
               toastLength: Toast.LENGTH_SHORT,
               gravity: ToastGravity.BOTTOM,
               timeInSecForIosWeb: 1,
@@ -131,7 +117,7 @@ class ForgotPasswordPage extends HookWidget {
                           const Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              'Forgot your password?',
+                              'Change Password',
                               style: TextStyle(
                                 color: Color(0xFF9B9B9B),
                                 fontSize: 25,
@@ -145,7 +131,8 @@ class ForgotPasswordPage extends HookWidget {
                             height: 10,
                           ),
                           TextField(
-                            controller: emailController,
+                            controller: newPasswordController,
+                            obscureText: !isPasswordVisible.value,
                             style: const TextStyle(
                               color: Color(0xFF9B9B9B),
                               fontSize: 12,
@@ -166,14 +153,19 @@ class ForgotPasswordPage extends HookWidget {
                                     color: Color(0xff009781), width: 1.0),
                               ),
                               prefixIcon: const Icon(
-                                Icons.alternate_email,
+                                Icons.password,
                                 color: Color(0xff9B9B9B),
                               ),
                               suffixIcon: IconButton(
-                                onPressed: handleCheckEmail,
-                                icon: const Icon(
-                                  Icons.send_rounded,
-                                  color: Color(0xff009781),
+                                onPressed: () {
+                                  isPasswordVisible.value =
+                                      !isPasswordVisible.value;
+                                },
+                                icon: Icon(
+                                  isPasswordVisible.value
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: const Color(0xff9B9B9B),
                                 ),
                               ),
                             ),
@@ -184,7 +176,7 @@ class ForgotPasswordPage extends HookWidget {
                           const Align(
                             alignment: Alignment.centerLeft,
                             child: Text(
-                              '*if your email exists, you can change the password',
+                              '*type your new password',
                               style: TextStyle(
                                 color: Color(0xFF9B9B9B),
                                 fontSize: 11,
@@ -195,16 +187,37 @@ class ForgotPasswordPage extends HookWidget {
                             ),
                           ),
                           const SizedBox(
-                            height: 30,
+                            height: 10.0,
+                          ),
+                          ElevatedButton(
+                            onPressed: changePassword,
+                            style: ElevatedButton.styleFrom(
+                                backgroundColor: const Color(0xFF009781),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                minimumSize: const Size.fromHeight(52)),
+                            child: const Text(
+                              'Change Password',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontFamily: 'Poppins',
+                                fontWeight: FontWeight.w600,
+                                height: 0,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(
+                            height: 10.0,
+                          ),
+                          const OrLine(),
+                          const SizedBox(
+                            height: 10.0,
                           ),
                           OutlinedButton(
                             onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => const LoginPage(),
-                                ),
-                              );
+                              Navigator.of(context).pop();
                             },
                             style: OutlinedButton.styleFrom(
                               side: const BorderSide(
@@ -217,7 +230,7 @@ class ForgotPasswordPage extends HookWidget {
                               minimumSize: const Size.fromHeight(52),
                             ),
                             child: const Text(
-                              'Back to Login',
+                              'Back',
                               style: TextStyle(
                                 color: Color(0xFF009781),
                                 fontSize: 16,
@@ -230,17 +243,13 @@ class ForgotPasswordPage extends HookWidget {
                         ],
                       ),
                     ),
-                  ),
+                  )
                 ],
               ),
             ),
-          ),
+          )
         ],
       ),
     );
-  }
-
-  String formatSecond(int seconds) {
-    return seconds.toString().padLeft(2, '0');
   }
 }
