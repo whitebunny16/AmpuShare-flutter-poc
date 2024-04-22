@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:ampushare/data/models/profile/profile_search_model.dart';
+import 'package:ampushare/pages/user_profile_page/user_profile_page.dart';
 import 'package:ampushare/services/dio_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -20,6 +21,14 @@ class SearchPage extends HookWidget {
           .get('/api/user/profiles', queryParameters: {'search': query});
       searchResults.value =
           profileSearchModelFromJson(jsonEncode(response.data));
+    }
+
+    void onTapProfile(String username) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => UserProfilePage(username: username),
+        ),
+      );
     }
 
     return Scaffold(
@@ -45,6 +54,9 @@ class SearchPage extends HookWidget {
             ),
             title: Text(user.username),
             subtitle: Text('${user.firstName} ${user.lastName}'),
+            onTap: () {
+              onTapProfile(user.username);
+            },
           );
         },
       ),

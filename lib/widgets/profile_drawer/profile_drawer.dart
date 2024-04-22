@@ -14,7 +14,7 @@ class ProfileDrawer extends HookConsumerWidget {
     final fullName = useState<String>("");
     final email = useState<String>("");
 
-    void getProfileImage() async {
+    void getProfile() async {
       final prefs = await SharedPreferences.getInstance();
       final authModelString = prefs.getString('authModel');
       AuthModel authModel = authModelFromJson(authModelString!);
@@ -24,7 +24,7 @@ class ProfileDrawer extends HookConsumerWidget {
     }
 
     useEffect(() {
-      getProfileImage();
+      getProfile();
       return null;
     }, []);
 
