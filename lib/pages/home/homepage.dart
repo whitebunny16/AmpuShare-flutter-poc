@@ -3,6 +3,7 @@ import 'dart:developer';
 
 import 'package:ampushare/data/models/auth_model/auth_model.dart';
 import 'package:ampushare/data/models/post/post_view_model.dart';
+import 'package:ampushare/pages/appointment_booking_page/appointment_booking_page.dart';
 import 'package:ampushare/pages/comment_page/comment_page.dart';
 import 'package:ampushare/pages/create_post_page/create_post_page.dart';
 import 'package:ampushare/pages/search_page/search_page.dart';
@@ -71,6 +72,11 @@ class HomePage extends HookWidget {
           builder: (context) => const SearchPage(),
         ),
       );
+    }
+
+    void onAppointmentBookingPressed() {
+      Navigator.of(context).push(MaterialPageRoute(
+          builder: (context) => const AppointmentBookingPage()));
     }
 
     return Scaffold(
@@ -208,7 +214,7 @@ class HomePage extends HookWidget {
               onProfileSearchPressed();
               break;
             case 2:
-              // Navigate to appointment page
+              onAppointmentBookingPressed();
               break;
             default:
               break;
