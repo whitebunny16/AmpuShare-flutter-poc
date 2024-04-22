@@ -14,18 +14,25 @@ class RegisterPage extends HookWidget {
     double SCREEN_HEIGHT = MediaQuery.of(context).size.height;
     double FORM_CARD_WIDTH = (SCREEN_WIDTH * 0.8);
 
+    final _formKey = useMemoized(() => GlobalKey<FormState>());
+
     final _isPasswordVisible = useState<bool>(false);
 
     final _usernameController = useTextEditingController();
     final _passwordController = useTextEditingController();
 
     void handleRegister() {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => const RegisterContinuePage(),
-        ),
-      );
+      if (_formKey.currentState!.validate()) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RegisterContinuePage(
+              username: _usernameController.text,
+              password: _passwordController.text,
+            ),
+          ),
+        );
+      }
     }
 
     return Scaffold(
@@ -56,188 +63,205 @@ class RegisterPage extends HookWidget {
                 ),
                 child: Padding(
                   padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      const SizedBox(
-                        height: 15.0,
-                      ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        const SizedBox(
+                          height: 15.0,
+                        ),
 
-                      // Username Label
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Username',
-                          style: TextStyle(
+                        // Username Label
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Username',
+                            style: TextStyle(
+                              color: Color(0xFF9B9B9B),
+                              fontSize: 12,
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w400,
+                              height: 0,
+                            ),
+                            textAlign: TextAlign.left,
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 5.0,
+                        ),
+                        // Username Input Field
+                        TextFormField(
+                          controller: _usernameController,
+                          style: const TextStyle(
                             color: Color(0xFF9B9B9B),
                             fontSize: 12,
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w400,
                             height: 0,
                           ),
-                          textAlign: TextAlign.left,
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 5.0,
-                      ),
-                      // Username Input Field
-                      TextField(
-                        controller: _usernameController,
-                        style: const TextStyle(
-                          color: Color(0xFF9B9B9B),
-                          fontSize: 12,
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w400,
-                          height: 0,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: "Enter Username",
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10.0),
-                            borderSide: const BorderSide(
-                                color: Color(0xff009781), width: 1.0),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10.0),
-                            borderSide: const BorderSide(
-                                color: Color(0xff009781), width: 1.0),
-                          ),
-                          prefixIcon: const Icon(
-                            Icons.person,
-                            color: Color(0xff9B9B9B),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your username';
+                            }
+                            return null;
+                          },
+                          decoration: InputDecoration(
+                            hintText: "Enter Username",
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                              borderSide: const BorderSide(
+                                  color: Color(0xff009781), width: 1.0),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                              borderSide: const BorderSide(
+                                  color: Color(0xff009781), width: 1.0),
+                            ),
+                            prefixIcon: const Icon(
+                              Icons.person,
+                              color: Color(0xff9B9B9B),
+                            ),
                           ),
                         ),
-                      ),
 
-                      const SizedBox(
-                        height: 15.0,
-                      ),
+                        const SizedBox(
+                          height: 15.0,
+                        ),
 
-                      // Password Label
-                      const Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          'Password',
-                          style: TextStyle(
+                        // Password Label
+                        const Align(
+                          alignment: Alignment.centerLeft,
+                          child: Text(
+                            'Password',
+                            style: TextStyle(
+                              color: Color(0xFF9B9B9B),
+                              fontSize: 12,
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w400,
+                              height: 0,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(
+                          height: 5.0,
+                        ),
+                        // Password Input Field
+                        TextFormField(
+                          controller: _passwordController,
+                          obscureText: _isPasswordVisible.value,
+                          style: const TextStyle(
                             color: Color(0xFF9B9B9B),
                             fontSize: 12,
                             fontFamily: 'Poppins',
                             fontWeight: FontWeight.w400,
                             height: 0,
                           ),
-                        ),
-                      ),
-                      const SizedBox(
-                        height: 5.0,
-                      ),
-                      // Password Input Field
-                      TextField(
-                        controller: _passwordController,
-                        obscureText: _isPasswordVisible.value,
-                        style: const TextStyle(
-                          color: Color(0xFF9B9B9B),
-                          fontSize: 12,
-                          fontFamily: 'Poppins',
-                          fontWeight: FontWeight.w400,
-                          height: 0,
-                        ),
-                        decoration: InputDecoration(
-                          hintText: "Enter Password",
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10.0),
-                            borderSide: const BorderSide(
-                                color: Color(0xff009781), width: 1.0),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(10.0),
-                            borderSide: const BorderSide(
-                                color: Color(0xff009781), width: 1.0),
-                          ),
-                          prefixIcon: const Icon(
-                            Icons.key,
-                            color: Color(0xff9B9B9B),
-                          ),
-                          suffixIcon: IconButton(
-                            onPressed: () {
-                              _isPasswordVisible.value =
-                                  !_isPasswordVisible.value;
-                            },
-                            icon: Icon(
-                                _isPasswordVisible.value
-                                    ? Icons.visibility
-                                    : Icons.visibility_off,
-                                color: const Color(0xff9B9B9B)),
+                          validator: (value) {
+                            if (value == null || value.isEmpty) {
+                              return 'Please enter your password';
+                            } else if (value.length < 8) {
+                              return 'Password must be at least 8 characters long';
+                            }
+                            return null;
+                          },
+                          decoration: InputDecoration(
+                            hintText: "Enter Password",
+                            enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                              borderSide: const BorderSide(
+                                  color: Color(0xff009781), width: 1.0),
+                            ),
+                            focusedBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                              borderSide: const BorderSide(
+                                  color: Color(0xff009781), width: 1.0),
+                            ),
+                            prefixIcon: const Icon(
+                              Icons.key,
+                              color: Color(0xff9B9B9B),
+                            ),
+                            suffixIcon: IconButton(
+                              onPressed: () {
+                                _isPasswordVisible.value =
+                                    !_isPasswordVisible.value;
+                              },
+                              icon: Icon(
+                                  _isPasswordVisible.value
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: const Color(0xff9B9B9B)),
+                            ),
                           ),
                         ),
-                      ),
 
-                      const SizedBox(
-                        height: 20.0,
-                      ),
+                        const SizedBox(
+                          height: 20.0,
+                        ),
 
-                      // Create Account Button
-                      ElevatedButton(
-                        onPressed: handleRegister,
-                        style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFF009781),
+                        // Create Account Button
+                        ElevatedButton(
+                          onPressed: handleRegister,
+                          style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFF009781),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              minimumSize: const Size.fromHeight(52)),
+                          child: const Text(
+                            'Create Account',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w600,
+                              height: 0,
+                            ),
+                          ),
+                        ),
+
+                        const SizedBox(
+                          height: 14.0,
+                        ),
+
+                        // ---OR---
+                        const OrLine(),
+
+                        const SizedBox(
+                          height: 10.5,
+                        ),
+
+                        OutlinedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const LoginPage(),
+                              ),
+                            );
+                          },
+                          style: OutlinedButton.styleFrom(
+                            side: const BorderSide(
+                              width: 1.0,
+                              color: Color(0xFF009781),
+                            ),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(10),
                             ),
-                            minimumSize: const Size.fromHeight(52)),
-                        child: const Text(
-                          'Create Account',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w600,
-                            height: 0,
+                            minimumSize: const Size.fromHeight(52),
                           ),
-                        ),
-                      ),
-
-                      const SizedBox(
-                        height: 14.0,
-                      ),
-
-                      // ---OR---
-                      const OrLine(),
-
-                      const SizedBox(
-                        height: 10.5,
-                      ),
-
-                      OutlinedButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const LoginPage(),
+                          child: const Text(
+                            'Login',
+                            style: TextStyle(
+                              color: Color(0xFF009781),
+                              fontSize: 16,
+                              fontFamily: 'Poppins',
+                              fontWeight: FontWeight.w600,
+                              height: 0,
                             ),
-                          );
-                        },
-                        style: OutlinedButton.styleFrom(
-                          side: const BorderSide(
-                            width: 1.0,
-                            color: Color(0xFF009781),
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                          minimumSize: const Size.fromHeight(52),
-                        ),
-                        child: const Text(
-                          'Login',
-                          style: TextStyle(
-                            color: Color(0xFF009781),
-                            fontSize: 16,
-                            fontFamily: 'Poppins',
-                            fontWeight: FontWeight.w600,
-                            height: 0,
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               ),

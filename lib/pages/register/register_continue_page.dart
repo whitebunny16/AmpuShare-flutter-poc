@@ -1,13 +1,22 @@
 import 'dart:io';
 
+import 'package:ampushare/data/models/user_registration/user_registration_model.dart';
+import 'package:ampushare/services/dio_helper.dart';
 import 'package:ampushare/widgets/avatar_picker_bottom_modal_sheet/AvatarPickerBottomModalSheet.dart';
 import 'package:ampushare/widgets/decorations/top_right_Decoration.dart';
+import 'package:dio/dio.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:syncfusion_flutter_datepicker/datepicker.dart';
 
 class RegisterContinuePage extends HookWidget {
-  const RegisterContinuePage({super.key});
+  final String username;
+  final String password;
+
+  const RegisterContinuePage(
+      {super.key, required this.username, required this.password});
 
   @override
   Widget build(BuildContext context) {
@@ -25,6 +34,8 @@ class RegisterContinuePage extends HookWidget {
     final _gender = useState<String?>(null);
 
     const GENDERS = <String>["Male", "Female", "Others"];
+
+    final _formKey = useMemoized(() => GlobalKey<FormState>());
 
     pickImage() => showModalBottomSheet(
         context: context,
@@ -59,7 +70,101 @@ class RegisterContinuePage extends HookWidget {
           });
     }
 
-    void handleCreateAccount() {}
+    void handleCreateAccount() async {
+      if (_image.value == null) {
+        Fluttertoast.showToast(
+            msg: "Please select a profile picture",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+            fontSize: 16.0);
+      }
+
+      if (_dateOfBirth.value == null) {
+        Fluttertoast.showToast(
+            msg: "Please select your date of birth",
+            toastLength: Toast.LENGTH_SHORT,
+            gravity: ToastGravity.BOTTOM,
+            timeInSecForIosWeb: 1,
+            backgroundColor: Colors.red,
+            textColor: Colors.white,
+            fontSize: 16.0);
+      }
+
+      if (_formKey.currentState!.validate()) {
+        if (_image.value == null || _dateOfBirth.value == null) {
+          return;
+        }
+
+        UserRegistrationModel user = UserRegistrationModel(
+          username: username,
+          email: _emailAddressController.text,
+          password: password,
+          firstName: _firstNameController.text,
+          lastName: _lastNameController.text,
+          profile: Profile(
+            dateOfBirth: _dateOfBirth.value!,
+            profilePic: _image.value!.path,
+            gender: _gender.value![0],
+          ),
+        );
+
+        try {
+          FormData formData = FormData.fromMap({
+            "username": user.username,
+            "email": user.email,
+            "password": user.password,
+            "first_name": user.firstName,
+            "last_name": user.lastName,
+            "profile": {
+              "profile_pic": await MultipartFile.fromFile(_image.value!.path),
+              "date_of_birth":
+                  "${user.profile.dateOfBirth.year.toString().padLeft(4, '0')}-${user.profile.dateOfBirth.month.toString().padLeft(2, '0')}-${user.profile.dateOfBirth.day.toString().padLeft(2, '0')}",
+              "gender": user.profile.gender[0]
+            }
+          });
+
+          Dio dio = await DioHelper.getDioForAuth();
+          final response = await dio.post(
+            '/api/user/register',
+            data: formData,
+          );
+
+          if (response.statusCode == 201) {
+            Fluttertoast.showToast(
+                msg: "Account created successfully",
+                toastLength: Toast.LENGTH_SHORT,
+                gravity: ToastGravity.BOTTOM,
+                timeInSecForIosWeb: 1,
+                backgroundColor: Colors.green,
+                textColor: Colors.white,
+                fontSize: 16.0);
+            Navigator.of(context).pop();
+          } else {
+            Fluttertoast.showToast(
+                msg: "Error occurred while creating account",
+                toastLength: Toast.LENGTH_SHORT,
+                gravity: ToastGravity.BOTTOM,
+                timeInSecForIosWeb: 1,
+                backgroundColor: Colors.red,
+                textColor: Colors.white,
+                fontSize: 16.0);
+          }
+        } catch (e) {
+          print(e.toString());
+          Fluttertoast.showToast(
+              msg: "Error occurred while creating account",
+              toastLength: Toast.LENGTH_SHORT,
+              gravity: ToastGravity.BOTTOM,
+              timeInSecForIosWeb: 1,
+              backgroundColor: Colors.red,
+              textColor: Colors.white,
+              fontSize: 16.0);
+        }
+      }
+    }
 
     return Scaffold(
       body: SingleChildScrollView(
@@ -95,7 +200,17 @@ class RegisterContinuePage extends HookWidget {
                         top: -AVATAR_WIDTH / 2,
                         left: (FORM_CARD_WIDTH - AVATAR_WIDTH) / 2,
                         child: InkWell(
-                          onTap: pickImage,
+                          onTap: () async {
+                            FilePickerResult? result =
+                                await FilePicker.platform.pickFiles(
+                              type: FileType.custom,
+                              allowedExtensions: ['jpg', 'png', 'mp4'],
+                            );
+
+                            if (result != null) {
+                              _image.value = File(result.files.single.path!);
+                            }
+                          },
                           customBorder: const CircleBorder(),
                           child: Container(
                             decoration: ShapeDecoration(
@@ -126,288 +241,315 @@ class RegisterContinuePage extends HookWidget {
                       Padding(
                         padding: const EdgeInsets.fromLTRB(
                             16, AVATAR_WIDTH / 2, 16, 16),
-                        child: Column(
-                          children: [
-                            const SizedBox(
-                              height: 15.0,
-                            ),
-                            // First name Label
-                            const Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                'First Name',
-                                style: TextStyle(
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            children: [
+                              const SizedBox(
+                                height: 15.0,
+                              ),
+                              // First name Label
+                              const Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'First Name',
+                                  style: TextStyle(
+                                    color: Color(0xFF9B9B9B),
+                                    fontSize: 12,
+                                    fontFamily: 'Poppins',
+                                    fontWeight: FontWeight.w400,
+                                    height: 0,
+                                  ),
+                                  textAlign: TextAlign.left,
+                                ),
+                              ),
+                              const SizedBox(
+                                height: 5.0,
+                              ),
+                              // First name Input Field
+                              TextFormField(
+                                controller: _firstNameController,
+                                keyboardType: TextInputType.name,
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your first name';
+                                  }
+                                  return null;
+                                },
+                                style: const TextStyle(
                                   color: Color(0xFF9B9B9B),
                                   fontSize: 12,
                                   fontFamily: 'Poppins',
                                   fontWeight: FontWeight.w400,
                                   height: 0,
                                 ),
-                                textAlign: TextAlign.left,
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 5.0,
-                            ),
-                            // First name Input Field
-                            TextField(
-                              controller: _firstNameController,
-                              keyboardType: TextInputType.name,
-                              style: const TextStyle(
-                                color: Color(0xFF9B9B9B),
-                                fontSize: 12,
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.w400,
-                                height: 0,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: "Enter First name",
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  borderSide: const BorderSide(
-                                      color: Color(0xff009781), width: 1.0),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  borderSide: const BorderSide(
-                                      color: Color(0xff009781), width: 1.0),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(
-                              height: 15.0,
-                            ),
-                            // Last name Label
-                            const Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                'Last Name',
-                                style: TextStyle(
-                                  color: Color(0xFF9B9B9B),
-                                  fontSize: 12,
-                                  fontFamily: 'Poppins',
-                                  fontWeight: FontWeight.w400,
-                                  height: 0,
-                                ),
-                                textAlign: TextAlign.left,
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 5.0,
-                            ),
-                            // Last name Input Field
-                            TextField(
-                              controller: _lastNameController,
-                              keyboardType: TextInputType.name,
-                              style: const TextStyle(
-                                color: Color(0xFF9B9B9B),
-                                fontSize: 12,
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.w400,
-                                height: 0,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: "Enter Last name",
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  borderSide: const BorderSide(
-                                      color: Color(0xff009781), width: 1.0),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  borderSide: const BorderSide(
-                                      color: Color(0xff009781), width: 1.0),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(
-                              height: 15.0,
-                            ),
-                            // Email Address Label
-                            const Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                'Email Address',
-                                style: TextStyle(
-                                  color: Color(0xFF9B9B9B),
-                                  fontSize: 12,
-                                  fontFamily: 'Poppins',
-                                  fontWeight: FontWeight.w400,
-                                  height: 0,
-                                ),
-                                textAlign: TextAlign.left,
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 5.0,
-                            ),
-                            // Email Address Input Field
-                            TextField(
-                              controller: _emailAddressController,
-                              keyboardType: TextInputType.emailAddress,
-                              style: const TextStyle(
-                                color: Color(0xFF9B9B9B),
-                                fontSize: 12,
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.w400,
-                                height: 0,
-                              ),
-                              decoration: InputDecoration(
-                                hintText: "Enter Email address",
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  borderSide: const BorderSide(
-                                      color: Color(0xff009781), width: 1.0),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  borderSide: const BorderSide(
-                                      color: Color(0xff009781), width: 1.0),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(
-                              height: 15.0,
-                            ),
-                            // Date of Birth Label
-                            const Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                'Date of Birth',
-                                style: TextStyle(
-                                  color: Color(0xFF9B9B9B),
-                                  fontSize: 12,
-                                  fontFamily: 'Poppins',
-                                  fontWeight: FontWeight.w400,
-                                  height: 0,
-                                ),
-                                textAlign: TextAlign.left,
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 5.0,
-                            ),
-
-                            // Date of Birth Input Field
-                            GestureDetector(
-                              onTap: _alertDialog,
-                              child: Container(
-                                width: double.infinity,
-                                height: 53.36,
-                                decoration: ShapeDecoration(
-                                  shape: RoundedRectangleBorder(
-                                    side: const BorderSide(
-                                        width: 1, color: Color(0xFF009781)),
-                                    borderRadius: BorderRadius.circular(10),
+                                decoration: InputDecoration(
+                                  hintText: "Enter First name",
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xff009781), width: 1.0),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xff009781), width: 1.0),
                                   ),
                                 ),
-                                child: Padding(
-                                  padding:
-                                      const EdgeInsets.fromLTRB(8, 16, 8, 16),
-                                  child: Text(
-                                    "${_dateOfBirth.value?.day}-${_dateOfBirth.value?.month}-${_dateOfBirth.value?.year}",
-                                    style: const TextStyle(
-                                      color: Color(0xFF9B9B9B),
-                                      fontSize: 12,
-                                      fontFamily: 'Poppins',
-                                      fontWeight: FontWeight.w400,
-                                      height: 0,
+                              ),
+
+                              const SizedBox(
+                                height: 15.0,
+                              ),
+                              // Last name Label
+                              const Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'Last Name',
+                                  style: TextStyle(
+                                    color: Color(0xFF9B9B9B),
+                                    fontSize: 12,
+                                    fontFamily: 'Poppins',
+                                    fontWeight: FontWeight.w400,
+                                    height: 0,
+                                  ),
+                                  textAlign: TextAlign.left,
+                                ),
+                              ),
+                              const SizedBox(
+                                height: 5.0,
+                              ),
+                              // Last name Input Field
+                              TextFormField(
+                                controller: _lastNameController,
+                                keyboardType: TextInputType.name,
+                                style: const TextStyle(
+                                  color: Color(0xFF9B9B9B),
+                                  fontSize: 12,
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.w400,
+                                  height: 0,
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your last name';
+                                  }
+                                  return null;
+                                },
+                                decoration: InputDecoration(
+                                  hintText: "Enter Last name",
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xff009781), width: 1.0),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xff009781), width: 1.0),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(
+                                height: 15.0,
+                              ),
+                              // Email Address Label
+                              const Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'Email Address',
+                                  style: TextStyle(
+                                    color: Color(0xFF9B9B9B),
+                                    fontSize: 12,
+                                    fontFamily: 'Poppins',
+                                    fontWeight: FontWeight.w400,
+                                    height: 0,
+                                  ),
+                                  textAlign: TextAlign.left,
+                                ),
+                              ),
+                              const SizedBox(
+                                height: 5.0,
+                              ),
+                              // Email Address Input Field
+                              TextFormField(
+                                controller: _emailAddressController,
+                                keyboardType: TextInputType.emailAddress,
+                                style: const TextStyle(
+                                  color: Color(0xFF9B9B9B),
+                                  fontSize: 12,
+                                  fontFamily: 'Poppins',
+                                  fontWeight: FontWeight.w400,
+                                  height: 0,
+                                ),
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please enter your email';
+                                  }
+                                  return null;
+                                },
+                                decoration: InputDecoration(
+                                  hintText: "Enter Email address",
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xff009781), width: 1.0),
+                                  ),
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xff009781), width: 1.0),
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(
+                                height: 15.0,
+                              ),
+                              // Date of Birth Label
+                              const Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'Date of Birth',
+                                  style: TextStyle(
+                                    color: Color(0xFF9B9B9B),
+                                    fontSize: 12,
+                                    fontFamily: 'Poppins',
+                                    fontWeight: FontWeight.w400,
+                                    height: 0,
+                                  ),
+                                  textAlign: TextAlign.left,
+                                ),
+                              ),
+                              const SizedBox(
+                                height: 5.0,
+                              ),
+
+                              // Date of Birth Input Field
+                              GestureDetector(
+                                onTap: _alertDialog,
+                                child: Container(
+                                  width: double.infinity,
+                                  height: 53.36,
+                                  decoration: ShapeDecoration(
+                                    shape: RoundedRectangleBorder(
+                                      side: const BorderSide(
+                                          width: 1, color: Color(0xFF009781)),
+                                      borderRadius: BorderRadius.circular(10),
                                     ),
-                                    textAlign: TextAlign.left,
+                                  ),
+                                  child: Padding(
+                                    padding:
+                                        const EdgeInsets.fromLTRB(8, 16, 8, 16),
+                                    child: Text(
+                                      "${_dateOfBirth.value?.day}-${_dateOfBirth.value?.month}-${_dateOfBirth.value?.year}",
+                                      style: const TextStyle(
+                                        color: Color(0xFF9B9B9B),
+                                        fontSize: 12,
+                                        fontFamily: 'Poppins',
+                                        fontWeight: FontWeight.w400,
+                                        height: 0,
+                                      ),
+                                      textAlign: TextAlign.left,
+                                    ),
                                   ),
                                 ),
                               ),
-                            ),
 
-                            const SizedBox(
-                              height: 15.0,
-                            ),
-                            // Gender Label
-                            const Align(
-                              alignment: Alignment.centerLeft,
-                              child: Text(
-                                'Gender',
-                                style: TextStyle(
+                              const SizedBox(
+                                height: 15.0,
+                              ),
+                              // Gender Label
+                              const Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text(
+                                  'Gender',
+                                  style: TextStyle(
+                                    color: Color(0xFF9B9B9B),
+                                    fontSize: 12,
+                                    fontFamily: 'Poppins',
+                                    fontWeight: FontWeight.w400,
+                                    height: 0,
+                                  ),
+                                  textAlign: TextAlign.left,
+                                ),
+                              ),
+                              const SizedBox(
+                                height: 5.0,
+                              ),
+                              // Gender Input Field
+
+                              DropdownButtonFormField<String>(
+                                hint: const Text(
+                                  "Select Gender",
+                                ),
+                                itemHeight: 48,
+                                value: _gender.value,
+                                items: GENDERS
+                                    .map(
+                                      (String item) => DropdownMenuItem(
+                                        value: item,
+                                        child: Text(item),
+                                      ),
+                                    )
+                                    .toList(),
+                                onChanged: (val) {
+                                  _gender.value = val!;
+                                },
+                                validator: (value) {
+                                  if (value == null || value.isEmpty) {
+                                    return 'Please select your gender';
+                                  }
+                                  return null;
+                                },
+                                style: const TextStyle(
                                   color: Color(0xFF9B9B9B),
                                   fontSize: 12,
                                   fontFamily: 'Poppins',
                                   fontWeight: FontWeight.w400,
                                   height: 0,
                                 ),
-                                textAlign: TextAlign.left,
-                              ),
-                            ),
-                            const SizedBox(
-                              height: 5.0,
-                            ),
-                            // Gender Input Field
-
-                            DropdownButtonFormField<String>(
-                              hint: const Text(
-                                "Select Gender",
-                              ),
-                              itemHeight: 48,
-                              value: _gender.value,
-                              items: GENDERS
-                                  .map(
-                                    (String item) => DropdownMenuItem(
-                                      value: item,
-                                      child: Text(item),
-                                    ),
-                                  )
-                                  .toList(),
-                              onChanged: (val) {
-                                _gender.value = val!;
-                              },
-                              style: const TextStyle(
-                                color: Color(0xFF9B9B9B),
-                                fontSize: 12,
-                                fontFamily: 'Poppins',
-                                fontWeight: FontWeight.w400,
-                                height: 0,
-                              ),
-                              decoration: InputDecoration(
-                                enabledBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  borderSide: const BorderSide(
-                                      color: Color(0xff009781), width: 1.0),
-                                ),
-                                focusedBorder: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10.0),
-                                  borderSide: const BorderSide(
-                                      color: Color(0xff009781), width: 1.0),
-                                ),
-                              ),
-                            ),
-
-                            const SizedBox(
-                              height: 20.0,
-                            ),
-
-                            // Create Account Button
-                            ElevatedButton(
-                              onPressed: handleCreateAccount,
-                              style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF009781),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(10),
+                                decoration: InputDecoration(
+                                  enabledBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xff009781), width: 1.0),
                                   ),
-                                  minimumSize: const Size.fromHeight(52)),
-                              child: const Text(
-                                'Create Account',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontFamily: 'Poppins',
-                                  fontWeight: FontWeight.w600,
-                                  height: 0,
+                                  focusedBorder: OutlineInputBorder(
+                                    borderRadius: BorderRadius.circular(10.0),
+                                    borderSide: const BorderSide(
+                                        color: Color(0xff009781), width: 1.0),
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
+
+                              const SizedBox(
+                                height: 20.0,
+                              ),
+
+                              // Create Account Button
+                              ElevatedButton(
+                                onPressed: handleCreateAccount,
+                                style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF009781),
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    minimumSize: const Size.fromHeight(52)),
+                                child: const Text(
+                                  'Create Account',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 16,
+                                    fontFamily: 'Poppins',
+                                    fontWeight: FontWeight.w600,
+                                    height: 0,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ],

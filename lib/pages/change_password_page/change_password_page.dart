@@ -33,7 +33,6 @@ class ChangePasswordPage extends HookWidget {
         return;
       }
 
-      // Make a POST request
       DioHelper.getDioForAuth().then((dio) async {
         try {
           final response = await dio.post(
