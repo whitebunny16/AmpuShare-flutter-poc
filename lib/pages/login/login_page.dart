@@ -1,5 +1,5 @@
-import 'dart:developer';
-
+import 'package:ampushare/data/models/auth_model/auth_model.dart';
+import 'package:ampushare/data/provider/auth_provider/auth_provider.dart';
 import 'package:ampushare/pages/forgot_password/forgot_password_page.dart';
 import 'package:ampushare/pages/home/homepage.dart';
 import 'package:ampushare/pages/register/register_page.dart';
@@ -7,14 +7,15 @@ import 'package:ampushare/services/dio_helper.dart';
 import 'package:ampushare/widgets/cover_image/AmpuShareBackgroundCover.dart';
 import 'package:ampushare/widgets/or_line/OrLine.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class LoginPage extends HookWidget {
+class LoginPage extends HookConsumerWidget {
   const LoginPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     double SCREEN_WIDTH = MediaQuery.of(context).size.width;
     double SCREEN_HEIGHT = MediaQuery.of(context).size.height;
 
@@ -25,26 +26,42 @@ class LoginPage extends HookWidget {
     final _usernameController = useTextEditingController();
     final _passwordController = useTextEditingController();
 
+    final authModelNotifier = ref.watch(authModelProvider.notifier);
+
     void handleLogin() {
-      DioHelper.getDio().then((dio) async {
+      DioHelper.getDioForAuth().then((dio) async {
         try {
           final response = await dio.post(
-            '/api/user/login/',
+            '/api/user/login',
             data: {
               "username": _usernameController.text,
               "password": _passwordController.text,
             },
           );
 
-          Navigator.push(context,
-              MaterialPageRoute(builder: (context) => const HomePage()));
+          final authModel = AuthModel(
+            access: response.data['access'],
+            refresh: response.data['refresh'],
+            user: AuthUser.fromJson(response.data['user']),
+          );
+
+          // authModelNotifier.updateAuthModel(authModel);
+
+          final prefs = await SharedPreferences.getInstance();
+          prefs.setString('authModel', authModelToJson(authModel));
+
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => const HomePage(),
+            ),
+          );
+
+          // after successful login
         } catch (e) {
           print(e);
         }
       });
     }
-
-    ;
 
     return Scaffold(
       body: SizedBox(

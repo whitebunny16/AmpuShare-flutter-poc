@@ -1,34 +1,107 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
+import 'dart:convert';
+import 'dart:developer';
 
+import 'package:ampushare/data/models/post/post_view_model.dart';
+import 'package:ampushare/pages/comment_page/comment_page.dart';
+import 'package:ampushare/services/dio_helper.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 
 class HomePage extends HookWidget {
   const HomePage({super.key});
 
+  Future<List<PostViewModel>> fetchPosts() async {
+    var dio = await DioHelper.getDio();
+    final response = await dio.get('/api/social/posts');
+    if (response.statusCode == 200) {
+      List<dynamic> responseData = response.data;
+      log(responseData.toString());
+      List<PostViewModel> posts =
+          postViewModelFromJson(jsonEncode(responseData));
+      return posts;
+    } else {
+      throw Exception('Failed to load posts');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final postsFuture = useMemoized(fetchPosts);
+    final snapshot = useFuture(postsFuture);
+
+    void onCommentButtonPress(int postId) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => CommentPage(postId: postId),
+        ),
+      );
+    }
+
     return Scaffold(
-      body: CustomScrollView(
-        slivers: <Widget>[
-          SliverAppBar(
-            title: Text('Home'),
-            floating: true,
-            pinned: true,
-            snap: true,
-          ),
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (BuildContext context, int index) {
-                return ListTile(
-                  title: Text('Item $index'),
-                );
-              },
-              childCount: 100,
-            ),
-          ),
-        ],
+      body: SafeArea(
+        child: snapshot.connectionState == ConnectionState.waiting
+            ? const CircularProgressIndicator()
+            : snapshot.hasError
+                ? Center(child: Text('${snapshot.error}'))
+                : ListView.builder(
+                    itemCount: snapshot.data?.length,
+                    itemBuilder: (context, index) {
+                      var post = snapshot.data?[index];
+                      return Card(
+                        child: Column(
+                          children: <Widget>[
+                            // Head
+                            ListTile(
+                              leading: CircleAvatar(
+                                backgroundImage: NetworkImage(
+                                    '${dotenv.get('API_HOST')}${post?.user.profilePic}' ??
+                                        ''),
+                              ),
+                              title: Text(post?.user.username ?? ''),
+                              subtitle: Text(post?.caption ?? ''),
+                            ),
+                            // Body
+                            if (post?.image != null)
+                              Image.network(post?.image ?? '')
+                            else if (post?.video != null)
+                              // Replace this with your video widget
+                              Container(child: Text('Video: ${post?.video}')),
+                            // Footer
+                            ButtonBar(
+                              alignment: MainAxisAlignment.start,
+                              children: <Widget>[
+                                Row(
+                                  children: <Widget>[
+                                    IconButton(
+                                      icon: Icon(Icons.thumb_up),
+                                      onPressed: () {
+                                        // Handle like button press
+                                      },
+                                    ),
+                                    Text(post?.likeCount.toString() ?? '0'),
+                                  ],
+                                ),
+                                Row(
+                                  children: <Widget>[
+                                    IconButton(
+                                      icon: Icon(Icons.comment),
+                                      onPressed: () {
+                                        onCommentButtonPress(post!.id);
+                                      },
+                                    ),
+                                    Text(post?.commentCount.toString() ?? '0'),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
       ),
     );
   }
 }
-
