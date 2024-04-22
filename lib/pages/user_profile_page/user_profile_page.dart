@@ -7,6 +7,7 @@ import 'package:ampushare/services/dio_helper.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class UserProfilePage extends HookWidget {
@@ -37,24 +38,54 @@ class UserProfilePage extends HookWidget {
         getProfile();
 
         final followersResponse =
-        await dio.get('/api/user/${userProfile.value?.userId}/followers');
+            await dio.get('/api/user/${userProfile.value?.userId}/followers');
         buddyFollowModelFromJson(jsonEncode(followersResponse.data));
-        isFollowing.value = buddyFollowModelFromJson(jsonEncode(followersResponse.data))
-            .any((element) => element.follower == currentUserId.value);
+        isFollowing.value =
+            buddyFollowModelFromJson(jsonEncode(followersResponse.data))
+                .any((element) => element.follower == currentUserId.value);
       }
 
       fetchUserProfile();
-    }, []);
-    Future<BuddyFollowModel> followUser() async {
+    }, [isFollowing]);
+
+    Future<void> followUser() async {
       var dio = await DioHelper.getDio();
-      final response = await dio.post('/api/user/${userProfile.value?.userId}/follow');
-      return BuddyFollowModel.fromJson(response.data);
+      try {
+        final response =
+            await dio.post('/api/user/${userProfile.value?.userId}/follow');
+        Fluttertoast.showToast(
+          msg: "Followed successfully",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+        );
+      } catch (e) {
+        Fluttertoast.showToast(
+          msg: "Follow failed",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+        );
+        throw e;
+      }
     }
 
-    Future<BuddyFollowModel> unfollowUser() async {
+    Future<void> unfollowUser() async {
       var dio = await DioHelper.getDio();
-      final response = await dio.delete('/api/user/${userProfile.value?.userId}/unfollow');
-      return BuddyFollowModel.fromJson(response.data);
+      try {
+        final response =
+            await dio.delete('/api/user/${userProfile.value?.userId}/unfollow');
+        Fluttertoast.showToast(
+          msg: "Unfollowed successfully",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+        );
+      } catch (e) {
+        Fluttertoast.showToast(
+          msg: "Unfollow failed",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.BOTTOM,
+        );
+        throw e;
+      }
     }
 
     void onFollowToggle() async {
