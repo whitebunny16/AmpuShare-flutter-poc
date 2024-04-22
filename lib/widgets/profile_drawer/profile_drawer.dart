@@ -1,5 +1,7 @@
 import 'package:ampushare/data/models/auth_model/auth_model.dart';
+import 'package:ampushare/data/store/auth_store/auth_store.dart';
 import 'package:ampushare/pages/buddy_view_page/buddy_view_page.dart';
+import 'package:ampushare/pages/login/login_page.dart';
 import 'package:ampushare/pages/own_profile_page/own_profile_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
@@ -15,6 +17,7 @@ class ProfileDrawer extends HookConsumerWidget {
     final profileImage = useState<String>("");
     final fullName = useState<String>("");
     final email = useState<String>("");
+    AuthStore authStore;
 
     void getProfile() async {
       final prefs = await SharedPreferences.getInstance();
@@ -41,7 +44,11 @@ class ProfileDrawer extends HookConsumerWidget {
     }
 
     void onLogoutIconPress() {
-      // Handle logout
+      authStore = AuthStore();
+
+      authStore.logout();
+      Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const LoginPage()));
     }
 
     return Drawer(
