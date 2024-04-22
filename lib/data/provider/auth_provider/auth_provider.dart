@@ -12,7 +12,12 @@ class AuthModelNotifier extends StateNotifier<AuthModel> {
       : super(AuthModel(
             access: '',
             refresh: '',
-            user: AuthUser(firstName: '', lastName: '', profileImage: '')));
+            user: AuthUser(
+                firstName: '',
+                lastName: '',
+                profileImage: '',
+                id: 0,
+                email: '')));
 
   void updateAuthModel(AuthModel newModel) {
     state = newModel;
@@ -29,7 +34,8 @@ class AuthRepository {
       return AuthModel(
           access: '',
           refresh: '',
-          user: AuthUser(firstName: '', lastName: '', profileImage: ''));
+          user: AuthUser(
+              firstName: '', lastName: '', profileImage: '', id: 0, email: ''));
     }
   }
 

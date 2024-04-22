@@ -27,7 +27,7 @@ class DioHelper {
     AuthModel authModel = AuthModel(
         access: '',
         refresh: '',
-        user: AuthUser(firstName: '', lastName: '', profileImage: ''));
+        user: AuthUser(firstName: '', lastName: '', profileImage: '', id: 0, email: ''));
     if (authModelString != null) {
       authModel = authModelFromJson(authModelString);
     }

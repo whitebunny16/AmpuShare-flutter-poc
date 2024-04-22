@@ -33,23 +33,31 @@ class AuthModel {
 }
 
 class AuthUser {
+  int id;
+  String email;
   String firstName;
   String lastName;
   String profileImage;
 
   AuthUser({
+    required this.id,
+    required this.email,
     required this.firstName,
     required this.lastName,
     required this.profileImage,
   });
 
   factory AuthUser.fromJson(Map<String, dynamic> json) => AuthUser(
+        id: json["id"],
+        email: json["email"],
         firstName: json["first_name"],
         lastName: json["last_name"],
         profileImage: json["profile_image"],
       );
 
   Map<String, dynamic> toJson() => {
+        "id": id,
+        "email": email,
         "first_name": firstName,
         "last_name": lastName,
         "profile_image": profileImage,

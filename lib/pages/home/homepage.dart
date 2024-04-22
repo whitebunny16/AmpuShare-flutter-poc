@@ -1,13 +1,17 @@
 import 'dart:convert';
 import 'dart:developer';
 
+import 'package:ampushare/data/models/auth_model/auth_model.dart';
 import 'package:ampushare/data/models/post/post_view_model.dart';
 import 'package:ampushare/pages/comment_page/comment_page.dart';
 import 'package:ampushare/pages/create_post_page/create_post_page.dart';
 import 'package:ampushare/services/dio_helper.dart';
+import 'package:ampushare/widgets/profile_drawer/profile_drawer.dart';
+import 'package:ampushare/widgets/video_player_widget/video_player_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class HomePage extends HookWidget {
   const HomePage({super.key});
@@ -45,7 +49,45 @@ class HomePage extends HookWidget {
       refreshKey.value++;
     }
 
+    final profileImage = useState<String>("");
+
+    void getProfileImage() async {
+      final prefs = await SharedPreferences.getInstance();
+      final authModelString = prefs.getString('authModel');
+      log(authModelFromJson(authModelString!).user.profileImage);
+      profileImage.value =
+          authModelFromJson(authModelString!).user.profileImage;
+    }
+
+    useEffect(() {
+      getProfileImage();
+    }, []);
+
     return Scaffold(
+      appBar: AppBar(
+        elevation: 6.0,
+        leading: Builder(
+          builder: (context) => IconButton(
+            icon: CircleAvatar(
+              radius: 20.0,
+              backgroundImage: NetworkImage(profileImage.value == null ||
+                      profileImage.value == ''
+                  ? 'https://cdn.iconscout.com/icon/free/png-256/free-user-1895567-1604557.png'
+                  : '${dotenv.get('API_HOST')}${profileImage.value}'),
+            ),
+            onPressed: () => Scaffold.of(context).openDrawer(),
+          ),
+        ),
+        actions: <Widget>[
+          IconButton(
+            icon: const Icon(Icons.chat),
+            onPressed: () {
+              // Navigate to chat page
+            },
+          ),
+        ],
+      ),
+      drawer: const ProfileDrawer(),
       body: SafeArea(
         child: RefreshIndicator(
           onRefresh: refreshPosts,
@@ -57,6 +99,7 @@ class HomePage extends HookWidget {
                       itemCount: snapshot.data?.length,
                       itemBuilder: (context, index) {
                         var post = snapshot.data?[index];
+
                         return Card(
                           child: Column(
                             children: <Widget>[
@@ -72,10 +115,14 @@ class HomePage extends HookWidget {
                               ),
                               // Body
                               if (post?.image != null)
-                                Image.network('${dotenv.get('API_HOST')}${post?.image}' ?? '')
+                                Image.network(
+                                    '${dotenv.get('API_HOST')}${post?.image}' ??
+                                        '')
                               else if (post?.video != null)
                                 // Replace this with your video widget
-                                Container(child: Text('Video: ${post?.video}')),
+                                VideoPlayerWidget(
+                                    videoUrl:
+                                        '${dotenv.get('API_HOST')}${post?.video}'),
                               // Footer
                               ButtonBar(
                                 alignment: MainAxisAlignment.start,
@@ -94,7 +141,8 @@ class HomePage extends HookWidget {
                                   Row(
                                     children: <Widget>[
                                       IconButton(
-                                        icon: Icon(Icons.comment),
+                                        icon: const Icon(
+                                            Icons.mode_comment_rounded),
                                         onPressed: () {
                                           onCommentButtonPress(post!.id);
                                         },
